@@ -11,6 +11,7 @@ import userRoutes from "./routers/userRoutes"
 import authRoutes from "./routers/authRoutes"
 import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "./config/swagger";
+import cors from "cors";
 
 
 
@@ -18,6 +19,9 @@ import { swaggerSpec } from "./config/swagger";
 dotenv.config()
 connectDb()
  app.use(express.json())
+ app.use(cors({
+  origin: "*",
+}));
 
 const PORT = process.env.PORT || 3000
 
