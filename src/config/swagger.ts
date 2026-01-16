@@ -6,17 +6,21 @@ const options: swaggerJsdoc.Options = {
     info: {
       title: "Dessert Shop API",
       version: "1.0.0",
-      description: "API documentation for Products, Categories and Auth where user add product to cart for shopping",
+      description:
+        "API documentation for authentication, products, categories, cart, and orders",
     },
-     servers: [
+
+    servers: [
       {
         url: "https://dessertshopbackend.onrender.com",
         description: "Production server",
       },
       {
         url: "http://localhost:3000",
-        description: "Local server",
-      }],
+        description: "Local development server",
+      },
+    ],
+
     components: {
       securitySchemes: {
         bearerAuth: {
@@ -26,13 +30,15 @@ const options: swaggerJsdoc.Options = {
         },
       },
     },
+
     security: [
       {
         bearerAuth: [],
       },
     ],
   },
-  apis: ["./src/routers/*.ts"], // where swagger comments live
+
+  apis: ["./src/routers/*.ts"],
 };
 
 export const swaggerSpec = swaggerJsdoc(options);
