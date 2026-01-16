@@ -76,7 +76,7 @@ export const getUserById = async (req: Request, res: Response) => {
       return res.status(403).json({ message: "Access denied" });
     }
 
-    const user = await UserModel.findOne(id).select("-password");
+    const user = await UserModel.findOne({ _id: id }).select("-password");
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
