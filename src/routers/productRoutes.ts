@@ -9,6 +9,7 @@ import express,{Request, Response} from "express"
  } from "../controllers/productController"
 import { requireAdmin } from "../middleware/adminMiddleware";
 import { protect } from "../middleware/authMiddleware";
+import { upload } from "../middleware/uploadMiddleware";
 
 
 // crete router variable
@@ -98,7 +99,7 @@ const router = express.Router();
  */
 
  // crete product route
- router.post("/create-product",protect,requireAdmin, createProduct)
+ router.post("/create-product",protect,requireAdmin,upload.single("image"), createProduct)
 
 /**
  * @swagger

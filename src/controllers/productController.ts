@@ -30,21 +30,31 @@ export const getAllProducts = async (req: Request, res: Response) => {
  }
 
 // function to create a new product
-export const createProduct = async(req:Request, res: Response) =>{
-    try {
-        const product = await ProductModel.create(req.body);
-        res.status(201).json({
-            created: "product created successfull",
-            data:product
-        })
-    } catch (err) {
-        res.status(500).json({
-            message: "Failed to create product",
-            error: err
-        })
-        
-    }
+export const createProduct = async (req: Request, res: Response) => {
+  try {
+    if (!req.file) {
+    return res.status(400).json({ message: "Product image is required" });
+  }
+
+  const product = await ProductModel.create({
+    name: req.body.name,
+    category: req.body.category,
+    price: req.body.price,
+    description: req.body.description,
+    imageUrl: `/uploads/${req.file.filename}`,
+    inStock: true,
+  });
+
+  res.status(201).json({
+    message: "product created successful",
+    data: product
+  });
+  } catch (error) {
+    res.status(400).json({message: "failed to create product", error})
+    console.log(`failed to create product because of this ${error}`)
+  }
 };
+
 
 // function to update a product by id
 

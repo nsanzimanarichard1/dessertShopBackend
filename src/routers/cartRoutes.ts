@@ -8,6 +8,8 @@ import {
   clearCart,
 } from "../controllers/cartController";
 
+import { protect } from "../middleware/authMiddleware";
+
 const router = Router();
 
 /**
@@ -19,7 +21,7 @@ const router = Router();
 
 /**
  * @swagger
- * /api/{userId}/items:
+ * /api/cart:
  *   post:
  *     summary: Add item to cart
  *     tags: [Cart]
@@ -54,7 +56,7 @@ const router = Router();
  *         description: User not found
  */
 
-router.post("/:userId/items", addToCart);
+router.post("/cart", protect, addToCart);
 /**
  * @swagger
  * /api/{userId}:
@@ -81,10 +83,10 @@ router.post("/:userId/items", addToCart);
  *       404:
  *         description: User not found
  */
-router.get("/:userId", getCart);
+router.get("/:userId", protect, getCart);
 /**
  * @swagger
- * /api/{userId}/items/{id}:
+ * /api/cart/{id}:
  *   put:
  *     summary: Update cart item quantity
  *     tags: [Cart]
@@ -121,10 +123,10 @@ router.get("/:userId", getCart);
  *         description: Item or user not found
  */
 
-router.put("/:userId/items/:id", updateCartItem);
+router.put("/cart/:id",protect, updateCartItem);
 /**
  * @swagger
- * /api/{userId}/items/{id}:
+ * /api/cart/{id}:
  *   delete:
  *     summary: Remove item from cart
  *     tags: [Cart]
@@ -148,10 +150,10 @@ router.put("/:userId/items/:id", updateCartItem);
  *       404:
  *         description: User not found
  */
-router.delete("/:userId/items/:id", removeCartItem);
+router.delete("/cart/:id", protect, removeCartItem);
 /**
  * @swagger
- * /api/{userId}:
+ * /api/cart:
  *   delete:
  *     summary: Clear user cart
  *     tags: [Cart]
@@ -169,7 +171,7 @@ router.delete("/:userId/items/:id", removeCartItem);
  *       404:
  *         description: User not found
  */
-router.delete("/:userId", clearCart);
+router.delete("/cart", protect, clearCart);
 
 export default router;
 

@@ -1,74 +1,101 @@
 // controllers/cartController.ts
 import { Request, Response } from "express";
 import { UserModel } from "../models/user";
+import { CartItem } from "../types/dessert";
 
 export const getCart = async (req: Request, res: Response) => {
-  const user = await UserModel.findById(req.params.userId)
+  const user = await UserModel.findById(req.user!._id)
     .populate("cart.dessertId");
 
-  if (!user) return res.status(404).json({ message: "User not found" });
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
+  }
 
-  res.json(user.cart);
+  return res.status(200).json(user.cart);
 };
+
+
 
 export const addToCart = async (req: Request, res: Response) => {
   const { dessertId, quantity } = req.body;
 
-  const user = await UserModel.findById(req.params.userId);
-  if (!user) return res.status(404).json({ message: "User not found" });
+  if (!dessertId || quantity <= 0) {
+    return res.status(400).json({ message: "Invalid input" });
+  }
 
-  const existingItem = user.cart.find(
-    (item: any) => item.dessertId === dessertId
+  const user = await UserModel.findById(req.user!._id);
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
+  }
+
+  const item = user.cart.find(
+    (i: CartItem) => i.dessertId === dessertId
   );
 
-  if (existingItem) {
-    existingItem.quantity += quantity;
+  if (item) {
+    item.quantity += quantity;
   } else {
-    user.cart.push({ dessertId, quantity, addedAt: new Date() });
+    user.cart.push({ dessertId, quantity });
   }
 
   await user.save();
-  res.status(200).json(user.cart);
+  return res.status(200).json(user.cart);
 };
+
+
 
 export const updateCartItem = async (req: Request, res: Response) => {
   const { quantity } = req.body;
 
-  const user = await UserModel.findById(req.params.userId);
-  if (!user) return res.status(404).json({ message: "User not found" });
+  if (quantity <= 0) {
+    return res.status(400).json({ message: "Quantity must be greater than 0" });
+  }
+
+  const user = await UserModel.findById(req.user!._id);
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
+  }
 
   const item = user.cart.find(
-    (i: any) => i.dessertId === req.params.id
+    (i: CartItem) => i.dessertId.toString() === req.params.dessertId
   );
 
-  if (!item) return res.status(404).json({ message: "Item not found" });
+  if (!item) {
+    return res.status(404).json({ message: "Item not found" });
+  }
 
   item.quantity = quantity;
   await user.save();
 
-  res.json(user.cart);
+  return res.status(200).json(user.cart);
 };
 
+
 export const removeCartItem = async (req: Request, res: Response) => {
-  const user = await UserModel.findById(req.params.userId);
-  if (!user) return res.status(404).json({ message: "User not found" });
+  const user = await UserModel.findById(req.user!._id);
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
+  }
 
   user.cart = user.cart.filter(
-    (item: any) => item.dessertId !== req.params.id
+    (i: CartItem) => i.dessertId.toString() !== req.params.dessertId
   );
 
   await user.save();
-  res.json(user.cart);
+  return res.status(200).json(user.cart);
 };
 
+
 export const clearCart = async (req: Request, res: Response) => {
-  const user = await UserModel.findById(req.params.userId);
-  if (!user) return res.status(404).json({ message: "User not found" });
+  const user = await UserModel.findById(req.user!._id);
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
+  }
 
   user.cart = [];
   await user.save();
 
-  res.status(204).send();
+  return res.status(204).send();
 };
 
 

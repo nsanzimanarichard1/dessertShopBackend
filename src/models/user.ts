@@ -12,6 +12,8 @@ export interface UserDocument extends Document<string> {
   password: string;
   role: UserRole;
   cart: CartItem[];
+  resetPasswordToken?: string;//option
+  resetPasswordExpires?: Date;//option
   createdAt: Date;
 }
 
@@ -45,6 +47,8 @@ const userSchema = new Schema<UserDocument>(
       enum: Object.values(UserRole),
       default: UserRole.CUSTOMER,
     },
+    resetPasswordToken: { type: String },
+    resetPasswordExpires: { type: Date },
 
     cart: { type: [cartItemSchema], default: [] },
   },

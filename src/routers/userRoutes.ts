@@ -103,7 +103,7 @@ router.get("/all/user", protect, requireAdmin, getAllUsers);
  *       500:
  *         description: Failed to fetch user
  */
-router.get("/user/:id", getUserById);
+router.get("/user/:id", protect, getUserById);
 /**
  * @swagger
  * /api/user/{id}:

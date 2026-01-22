@@ -17,6 +17,17 @@ const orderItemSchema = new Schema<OrderItem>(
     price: { type: Number, required: true },
     quantity: { type: Number, required: true, min: 1 },
     imageUrl: { type: String, required: true },
+
+    snapshotName: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+     snapshotPrice: {
+      type: Number,
+      required: true,
+      min: 0,
+    }
   },
   { _id: false }
 );
@@ -30,7 +41,11 @@ const orderSchema = new Schema<OrderDocument>(
 
     userId: { type: String, required: true, ref: "User" },
 
-    items: { type: [orderItemSchema], required: true },
+    items: {
+      type: [orderItemSchema],
+      required: true,
+      validate: [(v: OrderItem[]) => v.length > 0, "Order must have items"],
+    },
 
     total: { type: Number, required: true },
 
@@ -39,9 +54,15 @@ const orderSchema = new Schema<OrderDocument>(
       enum: Object.values(OrderStatus),
       default: OrderStatus.PENDING,
     },
+    
   },
-  { timestamps: true }
+  { timestamps: true , versionKey: false}
 );
+
+/* --------------------
+   Indexes
+--------------------- */
+orderSchema.index({ userId: 1, createdAt: -1 });
 
 export const OrderModel =
   models.Order || model<OrderDocument>("Order", orderSchema);

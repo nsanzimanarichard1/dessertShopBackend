@@ -2,7 +2,8 @@ import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import { UserModel } from "../models/user";
 import { UserRole } from "../types/dessert";
-
+import { sendEmailSafe } from "../utils/sendEmailSafe";
+import { welcomeEmail } from "../templates/emailTemplates";
 /**
  * CREATE USER (Public Register)
  */
@@ -34,6 +35,14 @@ export const createUser = async (req: Request, res: Response) => {
       password: hashedPassword,
       role: UserRole.CUSTOMER, // force default role
     });
+    //send email
+    sendEmailSafe(
+  user.email,
+  "Welcome to Dessert Shop 🎉",
+  welcomeEmail(user.username)
+);
+
+
 
     res.status(201).json({
       message: "User created successfully",
@@ -43,11 +52,14 @@ export const createUser = async (req: Request, res: Response) => {
         email: user.email,
         role: user.role,
       },
+      
     });
   } catch {
     res.status(500).json({ message: "Failed to create user" });
   }
+  
 };
+
 
 /**
  * GET ALL USERS (Admin only)
@@ -61,17 +73,25 @@ export const getAllUsers = async (_req: Request, res: Response) => {
   }
 };
 
+
 /**
- * GET USER BY ID (Admin OR same user)
+ * GET USER BY ID
+ * Admin can access any user
+ * User can only access their own profile
  */
 export const getUserById = async (req: Request, res: Response) => {
   try {
-    const loggedInUser = req.user!;
-    const { id } = req.params;
+    if (!req.user) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
 
+    const { id } = req.params;
+    const loggedInUser = req.user;
+
+    // Authorization check
     if (
       loggedInUser.role !== UserRole.ADMIN &&
-      loggedInUser._id.toString() !== id
+      loggedInUser._id !== id
     ) {
       return res.status(403).json({ message: "Access denied" });
     }
@@ -82,11 +102,13 @@ export const getUserById = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    res.status(200).json(user);
-  } catch {
-    res.status(500).json({ message: "Failed to fetch user" });
+    return res.status(200).json(user);
+  } catch (error) {
+    console.error("Get user error:", error);
+    return res.status(500).json({ message: "Failed to fetch user" });
   }
 };
+
 
 /**
  * UPDATE USER

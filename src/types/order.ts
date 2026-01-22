@@ -1,8 +1,11 @@
 export enum OrderStatus {
   PENDING = "pending",
   CONFIRMED = "confirmed",
+  SHIPPED = "shipped", 
+  DELIVERED = "delivered",
   CANCELLED = "cancelled",
 }
+
 
 export interface OrderItem {
   dessertId: string;
@@ -10,6 +13,8 @@ export interface OrderItem {
   price: number;
   quantity: number;
   imageUrl: string;
+  snapshotName: string;     // snapshot
+  snapshotPrice: number; 
 }
 
 export interface Order {
@@ -18,5 +23,7 @@ export interface Order {
   items: OrderItem[];
   total: number;
   status: OrderStatus;
+  shippingAddress: string; 
+  paymentMethod: "card" | "cash"; 
   createdAt: Date;
 }

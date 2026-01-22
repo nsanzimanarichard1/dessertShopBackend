@@ -16,7 +16,7 @@ const productSchema = new Schema<DessertDocument>(
     },
     price: { type: Number, required: true, min: 0 },
     description: { type: String, required: true },
-    imageUrl: { type: String, required: true },
+    imageUrl: { type: String, ref: "Image", required: true },
     inStock: { type: Boolean, default: true },
   },
   { timestamps: true }
