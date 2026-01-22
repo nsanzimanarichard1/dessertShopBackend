@@ -174,6 +174,51 @@ router.put("/user/:id",protect, updateUserById);
  */
 router.delete("/user/:id",protect, requireAdmin, deleteUser);
 
+/**
+ * @swagger
+ * /api/admin/user/{id}:
+ *   put:
+ *     summary: Update user by ID (Admin only)
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               username:
+ *                 type: string
+ *                 example: updatedusername
+ *               email:
+ *                 type: string
+ *                 example: updated@gmail.com
+ *               password:
+ *                 type: string
+ *                 example: UpdatedPassword123!
+ *               role:
+ *                 type: string
+ *                 example: ADMIN
+ *     responses:
+ *       200:
+ *         description: User updated successfully by admin
+ *       404:
+ *         description: User not found
+ *       401:
+ *         description: Unauthorized - Admin access required
+ *       403:
+ *         description: Forbidden - Admin access only
+ *       500:
+ *         description: Failed to update user
+ */
 // Admin updates user
 router.put("/admin/user/:id", protect, requireAdmin, updateUserById);
 

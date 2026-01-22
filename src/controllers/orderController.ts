@@ -1,9 +1,11 @@
 import { Request, Response } from "express";
+import mongoose from "mongoose";
 import { UserModel } from "../models/user";
 import { OrderModel } from "../models/order";
 import { OrderStatus } from "../types/order";
 import { sendEmailSafe } from "../utils/sendEmailSafe";
 import { welcomeEmail, orderPlacedEmail, orderStatusEmail } from "../templates/emailTemplates";
+import { ProductModel } from "../models/productSchema";
 export const createOrder = async (req: Request, res: Response) => {
   try {
     const user = await UserModel.findById(req.user!._id)
@@ -143,3 +145,107 @@ if (user) {
   }
 };
 
+// create order with transaction
+
+export const createOrderTx = async (
+  userId: string,
+  items: Array<{ dessertId: string; quantity: number }>
+) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    if (!Array.isArray(items) || items.length === 0) {
+      throw new Error("No items provided");
+    }
+
+    const orderItems: any[] = [];
+    let total = 0;
+
+    for (const item of items) {
+      const product = await ProductModel.findById(item.dessertId).session(
+        session
+      );
+
+      if (!product) {
+        throw new Error(`Product ${item.dessertId} not found`);
+      }
+
+      // ensure numeric stock is available (if present)
+      if (typeof product.stock === "number" && product.stock < item.quantity) {
+        throw new Error(`Insufficient stock for product ${product._id}`);
+      }
+
+      const price = product.price;
+      const quantity = item.quantity;
+
+      orderItems.push({
+        dessertId: product._id,
+        name: product.name,
+        price,
+        quantity,
+        imageUrl: product.imageUrl,
+        snapshotName: product.name,
+        snapshotPrice: price,
+      });
+
+      total += price * quantity;
+    }
+
+    // decrement stock for each product (if stock field exists)
+    for (const item of items) {
+      await ProductModel.findByIdAndUpdate(
+        item.dessertId,
+        { $inc: { stock: -item.quantity } },
+        { session }
+      );
+    }
+
+    const created = await OrderModel.create(
+      [{ userId, items: orderItems, total, status: OrderStatus.PENDING }],
+      { session }
+    );
+
+    const order = Array.isArray(created) ? created[0] : created;
+
+    await session.commitTransaction();
+    session.endSession();
+
+    return order;
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    throw error;
+  }
+};
+
+// cancel order
+
+export const cancelOrderTx = async (orderId: string, userId: string) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  // find order by id and owner userId
+  const order = await OrderModel.findOne({ _id: orderId, userId }).session(
+    session
+  );
+  if (!order) throw new Error("Order not found");
+
+  // NOTE: your Product schema currently does not track numeric `stock`.
+  // If you add a `stock` field to products, you can restore inventory here:
+  for (const item of order.items) {
+    await ProductModel.findByIdAndUpdate(
+      item.dessertId,
+      { $inc: { stock: item.quantity } },
+      { session }
+    );
+  }
+
+  order.status = OrderStatus.CANCELLED;
+  await order.save({ session });
+
+  await session.commitTransaction();
+  session.endSession();
+
+  return order;
+};

@@ -25,6 +25,7 @@ export interface Dessert {
   description: string;
   imageUrl: string;
   inStock: boolean;
+  stock?: number;
 }
 
 

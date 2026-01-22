@@ -18,9 +18,18 @@ const productSchema = new Schema<DessertDocument>(
     description: { type: String, required: true },
     imageUrl: { type: String, ref: "Image", required: true },
     inStock: { type: Boolean, default: true },
+    // numeric stock level for inventory management
+    stock: { type: Number, default: 0, min: 0 },
   },
   { timestamps: true }
 );
+
+//indexing to search
+
+productSchema.index({
+  "name":"text",
+  "description": "text"
+})
 
 export const ProductModel =
   models.Product || model<DessertDocument>("Product", productSchema);

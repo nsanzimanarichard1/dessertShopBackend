@@ -5,7 +5,11 @@ import express,{Request, Response} from "express"
     getProductById,
     createProduct,
     updateProductById,
-    deleteProductById
+    deleteProductById,
+    getProducts,
+    lowerInStock,
+    topProducts,
+    getProductStats
  } from "../controllers/productController"
 import { requireAdmin } from "../middleware/adminMiddleware";
 import { protect } from "../middleware/authMiddleware";
@@ -36,7 +40,121 @@ const router = express.Router();
  */
 
 //get all products route
+/**
+ * @swagger
+ * /api/products:
+ *   get:
+ *     summary: Get all products
+ *     tags: [Products]
+ *     responses:
+ *       200:
+ *         description: List of all products
+ *       500:
+ *         description: Server error
+ */
  router.get("/products", getAllProducts)
+
+/**
+ * @swagger
+ * /api/products/search:
+ *   get:
+ *     summary: Search products with pagination and filters
+ *     tags: [Products]
+ *     parameters:
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Text search on name and description
+ *         example: chocolate
+ *       - in: query
+ *         name: category
+ *         schema:
+ *           type: string
+ *         description: Filter by category
+ *         example: Cake
+ *       - in: query
+ *         name: minPrice
+ *         schema:
+ *           type: number
+ *         description: Minimum price filter
+ *         example: 5
+ *       - in: query
+ *         name: maxPrice
+ *         schema:
+ *           type: number
+ *         description: Maximum price filter
+ *         example: 50
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number for pagination
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Number of products per page
+ *       - in: query
+ *         name: sort
+ *         schema:
+ *           type: string
+ *           default: createdAt
+ *         description: Sort field (e.g., price, name, createdAt)
+ *     responses:
+ *       200:
+ *         description: Paginated and filtered products
+ *       500:
+ *         description: Server error
+ */
+// paginated/search route (uses text index)
+router.get("/products/search", getProducts)
+
+/**
+ * @swagger
+ * /api/products/lower-in-stock:
+ *   get:
+ *     summary: Get products that are out of stock
+ *     tags: [Products]
+ *     responses:
+ *       200:
+ *         description: List of out-of-stock products
+ *       500:
+ *         description: Server error
+ */
+// products that are out of stock
+router.get("/products/lower-in-stock", lowerInStock)
+
+/**
+ * @swagger
+ * /api/products/top:
+ *   get:
+ *     summary: Get top 10 most expensive products
+ *     tags: [Products]
+ *     responses:
+ *       200:
+ *         description: List of top 10 products by price
+ *       500:
+ *         description: Server error
+ */
+// top products and stats
+router.get("/products/top", topProducts)
+
+/**
+ * @swagger
+ * /api/products/stats:
+ *   get:
+ *     summary: Get product statistics grouped by category
+ *     tags: [Products]
+ *     responses:
+ *       200:
+ *         description: Statistics including totalProducts, avgPrice, minPrice, maxPrice per category
+ *       500:
+ *         description: Server error
+ */
+router.get("/products/stats", getProductStats)
 // get product by id 
 /**
  * @swagger

@@ -36,13 +36,26 @@ export const createProduct = async (req: Request, res: Response) => {
     return res.status(400).json({ message: "Product image is required" });
   }
 
+  // safely parse numeric fields from form-data
+  const price = req.body.price ? parseFloat(req.body.price) : undefined;
+  const stock = req.body.stock ? parseInt(req.body.stock, 10) : 0;
+  
+  // parse inStock: convert string "true"/"false" to boolean
+  const inStockValue = String(req.body.inStock).toLowerCase().trim();
+  const inStock = inStockValue === "true" || inStockValue === "1";
+
+  if (!price || isNaN(price)) {
+    return res.status(400).json({ message: "Valid price is required" });
+  }
+
   const product = await ProductModel.create({
     name: req.body.name,
     category: req.body.category,
-    price: req.body.price,
+    price,
     description: req.body.description,
     imageUrl: `/uploads/${req.file.filename}`,
-    inStock: true,
+    inStock,
+    stock,
   });
 
   res.status(201).json({
@@ -95,3 +108,72 @@ export const deleteProductById = async(req:Request, res: Response) =>{
         res.status(500).json(`Failed to delete product with id: ${req.params.id}`);
     }
 }
+
+// product statistics
+
+export const getProductStats = async (req : Request, res : Response) => {
+  const stats = await ProductModel.aggregate([
+    {
+      $group: {
+        _id: "$category",
+        totalProducts: { $sum: 1 },
+        avgPrice: { $avg: "$price" },
+        minPrice: { $min: "$price" },
+        maxPrice: { $max: "$price" }
+      }
+    }
+  ]);
+
+  res.json(stats);
+};
+
+//dispaly top 10 expensive product
+export const topProducts = async (req : Request, res: Response) => {
+  const products = await ProductModel.find()
+    .sort({ price: -1 })
+    .limit(10);
+
+  res.json(products);
+};
+
+// lower in stock
+
+export const lowerInStock = async(req: Request, res: Response) =>{
+
+  // current schema uses `inStock: boolean` — return products that are out of stock
+  const lowerProduct = await ProductModel.find({ inStock: false });
+
+  res.json({ product: lowerProduct });
+
+}
+
+// pagenation
+export const getProducts = async (req: Request, res: Response) => {
+  // parse and coerce query params to proper types
+  const pageNum = Number(req.query.page) || 1;
+  const limitNum = Number(req.query.limit) || 10;
+  const sortBy = (req.query.sort as string) || "createdAt";
+  const category = typeof req.query.category === "string" ? req.query.category : undefined;
+  const minPriceNum = req.query.minPrice ? Number(req.query.minPrice) : undefined;
+  const maxPriceNum = req.query.maxPrice ? Number(req.query.maxPrice) : undefined;
+  const search = typeof req.query.search === "string" ? req.query.search : undefined;
+
+  const query: any = {};
+  if (category) query.category = category;
+
+  if (minPriceNum != null || maxPriceNum != null) {
+    query.price = {
+      ...(minPriceNum != null && { $gte: minPriceNum }),
+      ...(maxPriceNum != null && { $lte: maxPriceNum })
+    };
+  }
+
+  if (search) query.$text = { $search: search };
+
+  const products = await ProductModel.find(query)
+    .sort(sortBy)
+    .skip((pageNum - 1) * limitNum)
+    .limit(limitNum);
+
+  res.json(products);
+};
