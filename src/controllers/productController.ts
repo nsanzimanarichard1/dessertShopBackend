@@ -1,12 +1,13 @@
 import express, {Request, Response} from "express";
 // import product model from productSchema in models folder
 import { ProductModel } from "../models/productSchema";
+import { CategoryModel } from "../models/category";
 import e from "express";
  
 // finction to get all products
 export const getAllProducts = async (req: Request, res: Response) => {
   try {
-    const products = await ProductModel.find({});
+    const products = await ProductModel.find({}).populate('category', 'name description');
     res.status(200).json({
         success: true,
         data: products
@@ -19,7 +20,7 @@ export const getAllProducts = async (req: Request, res: Response) => {
  export const getProductById = async (req: Request, res: Response) => {
     try {
         const {id} = req.params;
-        const product = await ProductModel.findById({_id: id});
+        const product = await ProductModel.findById({_id: id}).populate('category', 'name description');
         res.status(200).json({
             success: true,
             data: product
@@ -34,6 +35,20 @@ export const createProduct = async (req: Request, res: Response) => {
   try {
     if (!req.file) {
     return res.status(400).json({ message: "Product image is required" });
+  }
+
+  console.log('Category ID received:', req.body.category); // Debug log
+
+  // Validate category exists
+  const categoryExists = await CategoryModel.findById(req.body.category);
+  console.log('Category found:', categoryExists); // Debug log
+  
+  if (!categoryExists) {
+    return res.status(400).json({ 
+      message: "Invalid category ID",
+      receivedCategoryId: req.body.category,
+      availableCategories: await CategoryModel.find({}, '_id name')
+    });
   }
 
   // safely parse numeric fields from form-data
@@ -58,13 +73,16 @@ export const createProduct = async (req: Request, res: Response) => {
     stock,
   });
 
+  // Populate category info in response
+  await product.populate('category', 'name description');
+
   res.status(201).json({
     message: "product created successful",
     data: product
   });
   } catch (error) {
+    console.log('Error creating product:', error);
     res.status(400).json({message: "failed to create product", error})
-    console.log(`failed to create product because of this ${error}`)
   }
 };
 
@@ -171,6 +189,7 @@ export const getProducts = async (req: Request, res: Response) => {
   if (search) query.$text = { $search: search };
 
   const products = await ProductModel.find(query)
+    .populate('category', 'name description')
     .sort(sortBy)
     .skip((pageNum - 1) * limitNum)
     .limit(limitNum);

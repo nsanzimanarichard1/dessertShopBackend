@@ -189,25 +189,43 @@ router.get("/products/stats", getProductStats)
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             required:
  *               - name
+ *               - category
  *               - price
+ *               - description
+ *               - image
  *             properties:
  *               name:
  *                 type: string
  *                 example: Chocolate Cake
+ *               category:
+ *                 type: string
+ *                 description: Category ID from database
+ *                 example: 550e8400-e29b-41d4-a716-446655440000
  *               price:
  *                 type: number
  *                 example: 12.5
  *               description:
  *                 type: string
- *                 example: Delicious cake
+ *                 example: Delicious chocolate cake
+ *               image:
+ *                 type: string
+ *                 format: binary
+ *               inStock:
+ *                 type: boolean
+ *                 example: true
+ *               stock:
+ *                 type: number
+ *                 example: 10
  *     responses:
  *       201:
  *         description: Product created successfully
+ *       400:
+ *         description: Invalid category ID or missing required fields
  *       401:
  *         description: Not authorized, no token
  *       403:
