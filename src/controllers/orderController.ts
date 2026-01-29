@@ -6,9 +6,14 @@ import { OrderStatus } from "../types/order";
 import { sendEmailSafe } from "../utils/sendEmailSafe";
 import { welcomeEmail, orderPlacedEmail, orderStatusEmail } from "../templates/emailTemplates";
 import { ProductModel } from "../models/productSchema";
-export const createOrder = async (req: Request, res: Response) => {
+
+interface AuthRequest extends Request {
+  user?: string;
+}
+
+export const createOrder = async (req: AuthRequest, res: Response) => {
   try {
-    const user = await UserModel.findById(req.user!._id)
+    const user = await UserModel.findById(req.user)
       .populate("cart.dessertId");
 
     if (!user) {
@@ -58,18 +63,21 @@ export const createOrder = async (req: Request, res: Response) => {
   }
 };
 
-export const getMyOrders = async (req: Request, res: Response) => {
+export const getMyOrders = async (req: AuthRequest, res: Response) => {
   try {
-    const orders = await OrderModel.find({ userId: req.user!._id })
+    const orders = await OrderModel.find({ userId: req.user })
       .sort({ createdAt: -1 });
 
-    return res.status(200).json(orders);
+    return res.status(200).json({
+      success: true,
+      data: orders
+    });
   } catch {
     return res.status(500).json({ message: "Failed to fetch orders" });
   }
 };
 
-export const getOrderById = async (req: Request, res: Response) => {
+export const getOrderById = async (req: AuthRequest, res: Response) => {
   try {
     const order = await OrderModel.findById(req.params.id);
 
@@ -77,12 +85,18 @@ export const getOrderById = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "Order not found" });
     }
 
+    // Get user to check role
+    const user = await UserModel.findById(req.user);
+    if (!user) {
+      return res.status(401).json({ message: "User not found" });
+    }
+
     if (
-  req.user!.role !== "admin" &&
-  order.userId.toString() !== req.user!._id.toString()
-) {
-  return res.status(403).json({ message: "Access denied" });
-}
+      user.role !== "admin" &&
+      order.userId.toString() !== req.user!.toString()
+    ) {
+      return res.status(403).json({ message: "Access denied" });
+    }
 
 
     return res.status(200).json(order);
@@ -111,7 +125,7 @@ export const getAllOrdersAdmin = async (
 
 
 
-export const updateOrderStatus = async (req: Request, res: Response) => {
+export const updateOrderStatus = async (req: AuthRequest, res: Response) => {
   try {
     const { status } = req.body;
 
@@ -126,14 +140,14 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
         message: "Cancelled orders cannot be modified",
       });
     }
-    const user = await UserModel.findById(order.req.user._id);
-if (user) {
-  sendEmailSafe(
-    user.email,
-    "Order Status Updated",
-    orderStatusEmail(order._id.toString(), status)
-  );
-}
+    const user = await UserModel.findById(order.userId);
+    if (user) {
+      sendEmailSafe(
+        user.email,
+        "Order Status Updated",
+        orderStatusEmail(order._id.toString(), status)
+      );
+    }
 
 
     order.status = status;

@@ -3,55 +3,66 @@ import { Request, Response } from "express";
 import { UserModel } from "../models/user";
 import { CartItem } from "../types/dessert";
 
-export const getCart = async (req: Request, res: Response) => {
-  const user = await UserModel.findById(req.user!._id)
+interface AuthRequest extends Request {
+  user?: string;
+}
+
+export const getCart = async (req: AuthRequest, res: Response) => {
+  const user = await UserModel.findById(req.user)
     .populate("cart.dessertId");
 
   if (!user) {
     return res.status(404).json({ message: "User not found" });
   }
 
-  return res.status(200).json(user.cart);
+  return res.status(200).json({
+    success: true,
+    data: user.cart
+  });
 };
 
 
 
-export const addToCart = async (req: Request, res: Response) => {
+export const addToCart = async (req: AuthRequest, res: Response) => {
   const { dessertId, quantity } = req.body;
 
   if (!dessertId || quantity <= 0) {
     return res.status(400).json({ message: "Invalid input" });
   }
 
-  const user = await UserModel.findById(req.user!._id);
+  const user = await UserModel.findById(req.user);
   if (!user) {
     return res.status(404).json({ message: "User not found" });
   }
 
   const item = user.cart.find(
-    (i: CartItem) => i.dessertId === dessertId
+    (i: CartItem) => i.dessertId.toString() === dessertId
   );
 
   if (item) {
     item.quantity += quantity;
   } else {
-    user.cart.push({ dessertId, quantity });
+    user.cart.push({ dessertId, quantity, addedAt: new Date() });
   }
 
   await user.save();
-  return res.status(200).json(user.cart);
+  return res.status(200).json({
+    success: true,
+    message: "Item added to cart",
+    data: user.cart
+  });
 };
 
 
 
-export const updateCartItem = async (req: Request, res: Response) => {
+export const updateCartItem = async (req: AuthRequest, res: Response) => {
   const { quantity } = req.body;
 
   if (quantity <= 0) {
     return res.status(400).json({ message: "Quantity must be greater than 0" });
   }
 
-  const user = await UserModel.findById(req.user!._id);
+  const user = await UserModel.findById(req.user);
   if (!user) {
     return res.status(404).json({ message: "User not found" });
   }
@@ -67,12 +78,16 @@ export const updateCartItem = async (req: Request, res: Response) => {
   item.quantity = quantity;
   await user.save();
 
-  return res.status(200).json(user.cart);
+  return res.status(200).json({
+    success: true,
+    message: "Cart item updated",
+    data: user.cart
+  });
 };
 
 
-export const removeCartItem = async (req: Request, res: Response) => {
-  const user = await UserModel.findById(req.user!._id);
+export const removeCartItem = async (req: AuthRequest, res: Response) => {
+  const user = await UserModel.findById(req.user);
   if (!user) {
     return res.status(404).json({ message: "User not found" });
   }
@@ -82,12 +97,15 @@ export const removeCartItem = async (req: Request, res: Response) => {
   );
 
   await user.save();
-  return res.status(200).json(user.cart);
+  return res.status(200).json({
+    success: true,
+    message: "Item removed from cart",
+    data: user.cart
+  });
 };
 
-
-export const clearCart = async (req: Request, res: Response) => {
-  const user = await UserModel.findById(req.user!._id);
+export const clearCart = async (req: AuthRequest, res: Response) => {
+  const user = await UserModel.findById(req.user);
   if (!user) {
     return res.status(404).json({ message: "User not found" });
   }
@@ -95,7 +113,10 @@ export const clearCart = async (req: Request, res: Response) => {
   user.cart = [];
   await user.save();
 
-  return res.status(204).send();
+  return res.status(200).json({
+    success: true,
+    message: "Cart cleared"
+  });
 };
 
 

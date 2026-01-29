@@ -23,16 +23,10 @@ const router = Router();
  * @swagger
  * /api/cart:
  *   post:
- *     summary: Add item to cart
+ *     summary: Add item to cart (Protected)
  *     tags: [Cart]
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: userId
- *         required: true
- *         schema:
- *           type: string
  *     requestBody:
  *       required: true
  *       content:
@@ -45,13 +39,17 @@ const router = Router();
  *             properties:
  *               dessertId:
  *                 type: string
- *                 example: prod-123
+ *                 example: e012e549-3ae9-48e5-8a25-3770d60826d5
  *               quantity:
  *                 type: number
  *                 example: 1
  *     responses:
  *       200:
- *         description: Item added to cart
+ *         description: Item added to cart successfully
+ *       400:
+ *         description: Invalid input
+ *       401:
+ *         description: Not authorized, no token
  *       404:
  *         description: User not found
  */
@@ -59,49 +57,34 @@ const router = Router();
 router.post("/cart", protect, addToCart);
 /**
  * @swagger
- * /api/{userId}:
+ * /api/cart:
  *   get:
- *     summary: Get user cart
+ *     summary: Get user cart (Protected)
  *     tags: [Cart]
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: userId
- *         required: true
- *         schema:
- *           type: string
  *     responses:
  *       200:
- *         description: User cart retrieved
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/CartItem'
+ *         description: User cart retrieved successfully
+ *       401:
+ *         description: Not authorized, no token
  *       404:
  *         description: User not found
  */
-router.get("/:userId", protect, getCart);
+router.get("/cart", protect, getCart);
 /**
  * @swagger
- * /api/cart/{id}:
+ * /api/cart/{dessertId}:
  *   put:
- *     summary: Update cart item quantity
+ *     summary: Update cart item quantity (Protected)
  *     tags: [Cart]
  *     security:
  *       - bearerAuth: []
  *     parameters:
  *       - in: path
- *         name: userId
+ *         name: dessertId
  *         required: true
- *         schema:
- *           type: string
- *       - in: path
- *         name: id
- *         required: true
- *         description: Dessert ID
+ *         description: Dessert ID to update
  *         schema:
  *           type: string
  *     requestBody:
@@ -118,56 +101,52 @@ router.get("/:userId", protect, getCart);
  *                 example: 3
  *     responses:
  *       200:
- *         description: Cart item updated
+ *         description: Cart item updated successfully
+ *       400:
+ *         description: Invalid quantity
+ *       401:
+ *         description: Not authorized, no token
  *       404:
  *         description: Item or user not found
  */
-
-router.put("/cart/:id",protect, updateCartItem);
+router.put("/cart/:dessertId", protect, updateCartItem);
 /**
  * @swagger
- * /api/cart/{id}:
+ * /api/cart/{dessertId}:
  *   delete:
- *     summary: Remove item from cart
+ *     summary: Remove item from cart (Protected)
  *     tags: [Cart]
  *     security:
  *       - bearerAuth: []
  *     parameters:
  *       - in: path
- *         name: userId
+ *         name: dessertId
  *         required: true
- *         schema:
- *           type: string
- *       - in: path
- *         name: id
- *         required: true
- *         description: Dessert ID
+ *         description: Dessert ID to remove
  *         schema:
  *           type: string
  *     responses:
  *       200:
- *         description: Item removed from cart
+ *         description: Item removed from cart successfully
+ *       401:
+ *         description: Not authorized, no token
  *       404:
  *         description: User not found
  */
-router.delete("/cart/:id", protect, removeCartItem);
+router.delete("/cart/:dessertId", protect, removeCartItem);
 /**
  * @swagger
  * /api/cart:
  *   delete:
- *     summary: Clear user cart
+ *     summary: Clear user cart (Protected)
  *     tags: [Cart]
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: userId
- *         required: true
- *         schema:
- *           type: string
  *     responses:
- *       204:
- *         description: Cart cleared
+ *       200:
+ *         description: Cart cleared successfully
+ *       401:
+ *         description: Not authorized, no token
  *       404:
  *         description: User not found
  */

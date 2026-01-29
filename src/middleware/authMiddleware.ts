@@ -2,8 +2,12 @@ import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { UserModel } from "../models/user";
 
+interface AuthRequest extends Request {
+  user?: string;
+}
+
 export const protect = async (
-  req: Request,
+  req: AuthRequest,
   res: Response,
   next: NextFunction
 ) => {
@@ -31,7 +35,7 @@ export const protect = async (
       return res.status(401).json({ message: "User not found" });
     }
 
-    req.user = user;
+    req.user = decoded.id; // Store user ID as string
     next();
   } catch {
     return res.status(401).json({ message: "Invalid token" });

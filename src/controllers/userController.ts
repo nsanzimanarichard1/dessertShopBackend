@@ -4,6 +4,10 @@ import { UserModel } from "../models/user";
 import { UserRole } from "../types/dessert";
 import { sendEmailSafe } from "../utils/sendEmailSafe";
 import { welcomeEmail } from "../templates/emailTemplates";
+
+interface AuthRequest extends Request {
+  user?: string;
+}
 /**
  * CREATE USER (Public Register)
  */
@@ -79,14 +83,18 @@ export const getAllUsers = async (_req: Request, res: Response) => {
  * Admin can access any user
  * User can only access their own profile
  */
-export const getUserById = async (req: Request, res: Response) => {
+export const getUserById = async (req: AuthRequest, res: Response) => {
   try {
     if (!req.user) {
       return res.status(401).json({ message: "Not authenticated" });
     }
 
     const { id } = req.params;
-    const loggedInUser = req.user;
+    const loggedInUser = await UserModel.findById(req.user);
+    
+    if (!loggedInUser) {
+      return res.status(401).json({ message: "User not found" });
+    }
 
     // Authorization check
     if (
@@ -115,9 +123,17 @@ export const getUserById = async (req: Request, res: Response) => {
  * - User can update own profile
  * - Admin can update any user (including role)
  */
-export const updateUserById = async (req: Request, res: Response) => {
+export const updateUserById = async (req: AuthRequest, res: Response) => {
   try {
-    const loggedInUser = req.user!;
+    if (!req.user) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    const loggedInUser = await UserModel.findById(req.user);
+    if (!loggedInUser) {
+      return res.status(401).json({ message: "User not found" });
+    }
+
     const { id } = req.params;
     const { username, email, password, role } = req.body;
 
