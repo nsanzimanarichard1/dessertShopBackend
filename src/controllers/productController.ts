@@ -37,12 +37,8 @@ export const createProduct = async (req: Request, res: Response) => {
     return res.status(400).json({ message: "Product image is required" });
   }
 
-  console.log('Category ID received:', req.body.category); // Debug log
-
   // Validate category exists
   const categoryExists = await CategoryModel.findById(req.body.category);
-  console.log('Category found:', categoryExists); // Debug log
-  
   if (!categoryExists) {
     return res.status(400).json({ 
       message: "Invalid category ID",
@@ -54,10 +50,6 @@ export const createProduct = async (req: Request, res: Response) => {
   // safely parse numeric fields from form-data
   const price = req.body.price ? parseFloat(req.body.price) : undefined;
   const stock = req.body.stock ? parseInt(req.body.stock, 10) : 0;
-  
-  // parse inStock: convert string "true"/"false" to boolean
-  const inStockValue = String(req.body.inStock).toLowerCase().trim();
-  const inStock = inStockValue === "true" || inStockValue === "1";
 
   if (!price || isNaN(price)) {
     return res.status(400).json({ message: "Valid price is required" });
@@ -69,7 +61,6 @@ export const createProduct = async (req: Request, res: Response) => {
     price,
     description: req.body.description,
     imageUrl: `/uploads/${req.file.filename}`,
-    inStock,
     stock,
   });
 
@@ -155,14 +146,15 @@ export const topProducts = async (req : Request, res: Response) => {
 };
 
 // lower in stock
-
 export const lowerInStock = async(req: Request, res: Response) =>{
+  // Find products that are out of stock (stock = 0)
+  const lowerProduct = await ProductModel.find({ stock: 0 }).populate('category', 'name description');
 
-  // current schema uses `inStock: boolean` — return products that are out of stock
-  const lowerProduct = await ProductModel.find({ inStock: false });
-
-  res.json({ product: lowerProduct });
-
+  res.json({ 
+    message: "Out of stock products",
+    count: lowerProduct.length,
+    products: lowerProduct 
+  });
 }
 
 // pagenation

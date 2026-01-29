@@ -9,7 +9,6 @@ export interface DessertDocument extends Document<string> {
   price: number;
   description: string;
   imageUrl: string;
-  inStock: boolean;
   stock: number;
 }
 
@@ -25,11 +24,19 @@ const productSchema = new Schema<DessertDocument>(
     price: { type: Number, required: true, min: 0 },
     description: { type: String, required: true },
     imageUrl: { type: String, required: true },
-    inStock: { type: Boolean, default: true },
     stock: { type: Number, default: 0, min: 0 },
   },
   { timestamps: true }
 );
+
+// Virtual field for inStock status
+productSchema.virtual('inStock').get(function() {
+  return this.stock > 0;
+});
+
+// Include virtuals in JSON output
+productSchema.set('toJSON', { virtuals: true });
+productSchema.set('toObject', { virtuals: true });
 
 //indexing to search
 productSchema.index({

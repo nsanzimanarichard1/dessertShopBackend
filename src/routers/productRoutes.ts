@@ -215,15 +215,13 @@ router.get("/products/stats", getProductStats)
  *               image:
  *                 type: string
  *                 format: binary
- *               inStock:
- *                 type: boolean
- *                 example: true
  *               stock:
  *                 type: number
+ *                 description: Number of items in stock (0 = out of stock)
  *                 example: 10
  *     responses:
  *       201:
- *         description: Product created successfully
+ *         description: Product created successfully with auto-calculated inStock status
  *       400:
  *         description: Invalid category ID or missing required fields
  *       401:
